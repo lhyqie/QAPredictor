@@ -1,0 +1,20 @@
+Q1 : What is the maxima of the function f(x) = -5x2 + 3x?
+Q2 : What is Bayes¡¯ theorem?
+Q3 : What is the maximum likelihood estimate for a Gaussian distribution¡¯s parameters?
+Q4 : What is a time efficient sorting algorithm and what is its running time?
+Q5 : What is an NP-complete problem?
+Q6 : How does the conditional probability distribution for the this Bayesian network factor?
+Q7 : What is the difference between the max and sup functions?
+Q8 : What is a Markov decision process?
+Q9 : What are the exponential/logarithmic identities? (e.g., ea+b = ?, log (abc)= ?)
+Q10 : What is the entropy of distribution P(x)?
+Q11 : What is the representer theorem?
+Q12 : What is a support vector machine? How is it optimized?
+Q13 : What is the probability distribution for a logistic regression model?
+Q14 : What is dynamic programming?
+Q15 : What is the Lagrangian function for the optimization problem:
+Q16 : When is minx maxy f(x, y) = maxy minx f(x,y)?
+Q17 : What is a reproducing kernel Hilbert space?
+Q18 : What is a submodular function?
+Q19 : What is the approximation bound (worst case) for efficiently maximization a submodular set function?
+Q20 : What is stochastic gradient descent?
