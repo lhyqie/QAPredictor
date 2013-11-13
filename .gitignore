@@ -4,3 +4,5 @@
 *.class
 *.pyc
 .settings/*
+cvx/*
+*.asv
