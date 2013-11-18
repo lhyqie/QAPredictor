@@ -1,40 +1,37 @@
 from numpy import genfromtxt
 from numpy import isnan
-A = genfromtxt('data.csv', delimiter=',', skip_header = 1)
+import numpy as np
 
 def mapping(x):
-    if x>=1 and x<=3: 
-        return 3;
-    elif x>=4 and x<=7:
-        return 2;
-    elif x>=8 and x<=10:
+    if x>=1 and x<=3:    #difficult
         return 1;
+    elif x>=4 and x<=7:  #medium
+        return 2;
+    elif x>=8 and x<=10: #easy
+        return 3;
     else:
         return -999;
 
-print len(A)
+
+# each row is a question
+A1 = genfromtxt('quiztrain.csv', delimiter=',', skip_header = 0)
+A2 = genfromtxt('quiztest.csv', delimiter=',', skip_header = 0)
+A = np.concatenate( (A1,A2), axis = 1 );
+print A1.shape
+print A2.shape
 print A.shape
-#print A[:,0]
-#print A[:,1]
+ 
+
 
 from scipy.stats.stats import pearsonr
 
-#print A;
-#for i in range(A.shape[0]):
-#    for j in range(A.shape[1]):
-#        A[i,j] = mapping(A[i,j])
-#print A;
-
 res = [];
-for i in range(A.shape[1]):
-    for j in range(i+1, A.shape[1]):
-        #print i, j, pearsonr(A[:,i], A[:,j])[0]
-        res.append([i+1,j+1,pearsonr(A[:,i], A[:,j])[0]])
+for i in range(A.shape[0]):
+    for j in range(i+1, A.shape[0]):
+        res.append(['Q'+`i+1`,'Q'+`j+1`,pearsonr(A[i,:], A[j,:])[0]])
         
-for e in res:
-    #print e
-    if isnan(e[2]) : e[2] = 0; 
- 
+
+# sort correlation in the descending order of absolute value 
 print '--------------------------------------------------';
 res = sorted(res, key=lambda x: -abs(x[2]));
 
