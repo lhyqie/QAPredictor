@@ -35,7 +35,8 @@ def train(A, XY, YY):
     # w[2] sihong
     # w[3] w[4] huayi 
     # for 50 iterations
-    g = 4 # group id 
+    g = 3 # group id
+    # g = 4 
     w[g] = defaultdict(lambda: 0)
     for iternum in range(1, 30 +1):
         #print 'iter ', iternum
