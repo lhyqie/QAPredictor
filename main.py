@@ -1,20 +1,17 @@
 from numpy import genfromtxt
 from numpy import vstack
+import random
 from crf import *
-from sklearn.linear_model import LogisticRegression
 
 
 # The L2 regularization coefficient and learning rate for SGD
 l2_coeff = 1
 rate = 0.1
 
-
 A = genfromtxt('quiztrain.csv', delimiter=',', skip_header = 0)
 B = genfromtxt('quiztest.csv', delimiter=',', skip_header = 0)
 BX = B[0:10,:]
 BY = B[10:,:]
-
-standalone_y_idx = [12, 13, 20]
 
 XY = [
          {12:[x for x in range(1, 11)]},
@@ -31,63 +28,49 @@ YY = [
         [11,17,18,19]
       ]    
 
-def train(A, XY, YY):
+def train(A, XY, YY , maxiter = 100):
     w = [{} for x in range(len(XY))]
-    standalone_models = []
-    # w[0] sihong
-    for i in xrange(3):
-        target_index = standalone_y_idx[i]
-        target = A[target_index,:].transpose()
-        data = A[0:10,:].transpose()
-        print target.shape, data.shape
-        standalone_models[i] = LogisticRegression(penalty='l1').fit(data, target)
-    
-    # w[3] w[4] huayi 
-    # for 50 iterations
-    #g = 0
-    g = 3 # group id
-    #g = 4 
-    w[g] = defaultdict(lambda: 0)
-    for iternum in range(1, 30 +1):
-        #print 'iter ', iternum
-        grad = defaultdict(lambda: 0)
-        # Perform regularization
-        reg_lik = 0;
-        for k, v in w[g].items():
-            grad[k] -= 2*v*l2_coeff
-            reg_lik -= v*v*l2_coeff
-        # Get the gradients and likelihoods
-        lik = 0
-        for col in range(0, A.shape[1]):  # col is the index of train data  
-            y = []
-            y.append(0)
-            for yInd in YY[g]:
-                y.append(A[yInd-1,col])
-            y.append(0)
-            #print y;
-            x = [] 
-            x.append([0])
-            for yy in YY[g]:
-                if yy in XY[g]:
-                    x.append(XY[g][yy])
-                else:
-                    x.append([])
-            x.append([0]);
-            #print x;
-            my_grad, my_lik = calc_gradient(x, y, w[g], A[:,col])
-            for k, v in my_grad.items(): grad[k] += v
-            lik += my_lik
-            #print my_lik
-        l1 = sum( [abs(k) for k in grad.values()] )
-        print "Iter %r likelihood: lik=%r, reg=%r, reg+lik=%r gradL1=%r" % (iternum, lik, reg_lik, lik+reg_lik, l1)
-        for k, v in grad.items(): w[g][k] +=  1.0  * v /l1 * rate     
-     
-    import operator
-    sorted_w = sorted(w[g].iteritems(), key= operator.itemgetter(1), reverse = True)
-    for e in sorted_w:
-        print "%20s  %12s" % ( e[0], e[1])
-
-    return w,standalone_models;
+    for g in range(0, 4+1): # group id        
+        w[g] = defaultdict(lambda: 0)
+        for iternum in range(1, 100 +1):
+            #print 'iter ', iternum
+            grad = defaultdict(lambda: 0)
+            # Perform regularization
+            reg_lik = 0;
+            for k, v in w[g].items():
+                grad[k] -= 2*v*l2_coeff
+                reg_lik -= v*v*l2_coeff
+            # Get the gradients and likelihoods
+            lik = 0
+            for col in range(0, A.shape[1]):  # col is the index of train data  
+                y = []
+                y.append(0)
+                for yInd in YY[g]:
+                    y.append(A[yInd-1,col])
+                y.append(0)
+                #print y;
+                x = [] 
+                x.append([0])
+                for yy in YY[g]:
+                    if yy in XY[g]:
+                        x.append(XY[g][yy])
+                    else:
+                        x.append([])
+                x.append([0]);
+                #print x;
+                my_grad, my_lik = calc_gradient(x, y, w[g], A[:,col])
+                for k, v in my_grad.items(): grad[k] += v
+                lik += my_lik
+                #print my_lik
+            l1 = sum( [abs(k) for k in grad.values()] )
+            print "Iter %r likelihood: lik=%r, reg=%r, reg+lik=%r gradL1=%r" % (iternum, lik, reg_lik, lik+reg_lik, l1)
+            for k, v in grad.items(): w[g][k] +=  1.0  * v /l1 * rate     
+                        
+        #import operator
+        #sorted_w = sorted(w[g].iteritems(), key= operator.itemgetter(1), reverse = True)
+        #for e in sorted_w:
+        #    print "%20s  %12s" % ( e[0], e[1])
+    return w;
 
 
 def generateAllYs(YY, g):
@@ -107,48 +90,39 @@ def generateHelper(res, yy, y ,k):
             generateHelper(res, yy, y, k+1)
             
 # bx is a test point 
-def test(bx, w, standalone_models, XY, YY):
+def test(bx, w, XY, YY):
     p = [{} for x in range(len(XY))]
-    for i in xrange(len(standalone_models)):
-        prob = standalone_models[i].predict_prob(bx.transpose())
-        for j in xrange(len(prob)):
-            p[i][]
-    # p[0] sihong
-    # p[1] sihong
-    # p[2] sihong
-    # p[3] p[4] xiaokai
-    # try all possible values Question y_i can take
-    #g = 0
-    g = 3
-    #g = 4
-    Ys = generateAllYs(YY, g)
-    for y in Ys: # each possible y
-        y = [0]+ y +[0]
-        x = []
-        x.append([0])
-        for yy in YY[g]:
-            if yy in XY[g]:
-                x.append(XY[g][yy])
-            else:
-                x.append([])
-        x.append([0])
-        #print 'x = ', x
-        #print 'y = ', y
-        my_grad, my_lik = calc_gradient(x, y, w[g], bx)
-        #print y , my_lik
-        p[g][tuple(y[1:-1])] = my_lik
-    
-    import operator
-    sorted_p = sorted(p[g].iteritems(), key= operator.itemgetter(1), reverse = True)
-    for e in sorted_p:
-        print "%20s  %12s" % ( e[0], e[1])
-
+    for g in range(0,4+1): # group id
+        Ys = generateAllYs(YY, g)
+        for y in Ys: # each possible y
+            y = [0]+ y +[0]
+            x = []
+            x.append([0])
+            for yy in YY[g]:
+                if yy in XY[g]:
+                    x.append(XY[g][yy])
+                else:
+                    x.append([])
+            x.append([0])
+            #print 'x = ', x
+            #print 'y = ', y
+            my_grad, my_lik = calc_gradient(x, y, w[g], bx)
+            #print y , my_lik
+            if len(y) == 3:
+                p[g][y[1]] = my_lik;
+            else: p[g][tuple(y[1:-1])] = my_lik
+        
+        #import operator
+        #sorted_p = sorted(p[g].iteritems(), key= operator.itemgetter(1), reverse = True)
+        #for e in sorted_p:
+        #    print "%20s  %12s" % ( e[0], e[1])
     return p
 
 if __name__ == '__main__':
     #print A
     #print BX
     #print BY
+    
     n_features, n_instances = A.shape
     n_features -= 10
     n_folds = 5
@@ -157,17 +131,29 @@ if __name__ == '__main__':
     slots = range(1, n_instances)
     random.shuffle(slots)
     
-    fold_size = n_instances / n_fold 
+    fold_size = n_instances / n_folds
     for fold in xrange(n_folds):
         test_subset = set(slots[fold * fold_size: (fold+1)*fold_size-1])
-        train_subset = [slots[k] for k in n_instances if slots[k] not in test_subset]
-        
+        train_subset = [slots[k] for k in xrange(n_instances) if slots[k] not in test_subset]
         #test_data = A[0:10, list(test_subset)]
         #test_target = A[10: 20, list(test_subset)]
         #train_data = A[0:10, train_subset]
         #train_target = A[10:20, train_subset]
-        
-        w, standalone_models = train(A[:, train_subset], XY, YY)
-        for i in xrange(len(test_subset)): 
-            test(A[:,i], w, standalone_models, XY, YY)
+        w = train(A[:, train_subset], XY, YY)
+        test_subset = list(test_subset)
+        for i in xrange(len(test_subset)):
+            print 'column number = ' , test_subset[i] 
+            p = test(A[:,test_subset[i]], w, XY, YY)
+            for g in range(len(p)):
+                print 'g =', g;
+                import operator
+                sorted_p = sorted(p[g].iteritems(), key= operator.itemgetter(1), reverse = True)
+                for e in sorted_p:
+                    print "%20s  %12s" % ( e[0], e[1])
+    
+    #w = train(A, XY, YY)
+    #p = test(BX[:,0], w, XY, YY)
+    #for p_g in p:
+    #    sprint p_g
+    
     
