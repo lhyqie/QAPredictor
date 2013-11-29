@@ -35,8 +35,9 @@ def train(A, XY, YY):
     # w[2] sihong
     # w[3] w[4] huayi 
     # for 50 iterations
+    #g = 0
     g = 3 # group id
-    # g = 4 
+    #g = 4 
     w[g] = defaultdict(lambda: 0)
     for iternum in range(1, 30 +1):
         #print 'iter ', iternum
@@ -77,9 +78,25 @@ def train(A, XY, YY):
     for e in sorted_w:
         print "%20s  %12s" % ( e[0], e[1])
 
+    return w;
 
 
-
+def generateAllYs(YY, g):
+    yy = YY[g]  # [16,15,14]
+    res = [];
+    y = [0 for x in range(len(yy))];
+    generateHelper(res, yy, y, 0)
+    return res
+    
+def generateHelper(res, yy, y ,k):
+    if k == len(yy):
+        import copy
+        res.append(copy.deepcopy(y))
+    else:
+        for i in range(1, 3+1):
+            y[k] = i 
+            generateHelper(res, yy, y, k+1)
+            
 # bx is a test point 
 def test(bx, w, XY, YY):
     p = [{} for x in range(len(XY))]
@@ -87,10 +104,38 @@ def test(bx, w, XY, YY):
     # p[1] sihong
     # p[2] sihong
     # p[3] p[4] xiaokai
+    # try all possible values Question y_i can take
+    #g = 0
+    g = 3
+    #g = 4
+    Ys = generateAllYs(YY, g)
+    for y in Ys: # each possible y
+        y = [0]+ y +[0]
+        x = []
+        x.append([0])
+        for yy in YY[g]:
+            if yy in XY[g]:
+                x.append(XY[g][yy])
+            else:
+                x.append([])
+        x.append([0])
+        #print 'x = ', x
+        #print 'y = ', y
+        my_grad, my_lik = calc_gradient(x, y, w[g], bx)
+        #print y , my_lik
+        p[g][tuple(y[1:-1])] = my_lik
+    
+    import operator
+    sorted_p = sorted(p[g].iteritems(), key= operator.itemgetter(1), reverse = True)
+    for e in sorted_p:
+        print "%20s  %12s" % ( e[0], e[1])
+
     return p
 
 if __name__ == '__main__':
     #print A
     #print BX
     #print BY
-    train(A, XY, YY)
+    w = train(A, XY, YY)
+    test(BX[:,0], w , XY, YY)
+    
