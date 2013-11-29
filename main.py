@@ -1,6 +1,7 @@
 from numpy import genfromtxt
 from numpy import vstack
 from crf import *
+from sklearn.linear_model import LogisticRegression
 
 
 # The L2 regularization coefficient and learning rate for SGD
@@ -12,6 +13,8 @@ A = genfromtxt('quiztrain.csv', delimiter=',', skip_header = 0)
 B = genfromtxt('quiztest.csv', delimiter=',', skip_header = 0)
 BX = B[0:10,:]
 BY = B[10:,:]
+
+standalone_y_idx = [12, 13, 20]
 
 XY = [
          {12:[x for x in range(1, 11)]},
@@ -30,9 +33,15 @@ YY = [
 
 def train(A, XY, YY):
     w = [{} for x in range(len(XY))]
-    # w[0] sihong 
-    # w[1] sihong
-    # w[2] sihong
+    standalone_models = []
+    # w[0] sihong
+    for i in xrange(3):
+        target_index = standalone_y_idx[i]
+        target = A[target_index,:].transpose()
+        data = A[0:10,:].transpose()
+        print target.shape, data.shape
+        standalone_models[i] = LogisticRegression(penalty='l1').fit(data, target)
+    
     # w[3] w[4] huayi 
     # for 50 iterations
     #g = 0
@@ -78,7 +87,7 @@ def train(A, XY, YY):
     for e in sorted_w:
         print "%20s  %12s" % ( e[0], e[1])
 
-    return w;
+    return w,standalone_models;
 
 
 def generateAllYs(YY, g):
@@ -98,8 +107,12 @@ def generateHelper(res, yy, y ,k):
             generateHelper(res, yy, y, k+1)
             
 # bx is a test point 
-def test(bx, w, XY, YY):
+def test(bx, w, standalone_models, XY, YY):
     p = [{} for x in range(len(XY))]
+    for i in xrange(len(standalone_models)):
+        prob = standalone_models[i].predict_prob(bx.transpose())
+        for j in xrange(len(prob)):
+            p[i][]
     # p[0] sihong
     # p[1] sihong
     # p[2] sihong
@@ -136,6 +149,25 @@ if __name__ == '__main__':
     #print A
     #print BX
     #print BY
-    w = train(A, XY, YY)
-    test(BX[:,0], w , XY, YY)
+    n_features, n_instances = A.shape
+    n_features -= 10
+    n_folds = 5
+    # 5-fold cross validation
+    
+    slots = range(1, n_instances)
+    random.shuffle(slots)
+    
+    fold_size = n_instances / n_fold 
+    for fold in xrange(n_folds):
+        test_subset = set(slots[fold * fold_size: (fold+1)*fold_size-1])
+        train_subset = [slots[k] for k in n_instances if slots[k] not in test_subset]
+        
+        #test_data = A[0:10, list(test_subset)]
+        #test_target = A[10: 20, list(test_subset)]
+        #train_data = A[0:10, train_subset]
+        #train_target = A[10:20, train_subset]
+        
+        w, standalone_models = train(A[:, train_subset], XY, YY)
+        for i in xrange(len(test_subset)): 
+            test(A[:,i], w, standalone_models, XY, YY)
     
