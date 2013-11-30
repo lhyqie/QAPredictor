@@ -32,7 +32,7 @@ def train(A, XY, YY , maxiter = 100):
     w = [{} for x in range(len(XY))]
     for g in range(0, 4+1): # group id        
         w[g] = defaultdict(lambda: 0)
-        for iternum in range(1, 100 +1):
+        for iternum in range(1, maxiter +1):
             #print 'iter ', iternum
             grad = defaultdict(lambda: 0)
             # Perform regularization
@@ -63,7 +63,7 @@ def train(A, XY, YY , maxiter = 100):
                 lik += my_lik
                 #print my_lik
             l1 = sum( [abs(k) for k in grad.values()] )
-            print "Iter %r likelihood: lik=%r, reg=%r, reg+lik=%r gradL1=%r" % (iternum, lik, reg_lik, lik+reg_lik, l1)
+            #print "Iter %r likelihood: lik=%r, reg=%r, reg+lik=%r gradL1=%r" % (iternum, lik, reg_lik, lik+reg_lik, l1)
             for k, v in grad.items(): w[g][k] +=  1.0  * v /l1 * rate     
                         
         #import operator
@@ -128,32 +128,39 @@ if __name__ == '__main__':
     n_folds = 5
     # 5-fold cross validation
     
-    slots = range(1, n_instances)
+    slots = range(n_instances)
     random.shuffle(slots)
+    
+    total_log_likelihood = 0
+    n_tested = 0
     
     fold_size = n_instances / n_folds
     for fold in xrange(n_folds):
-        test_subset = set(slots[fold * fold_size: (fold+1)*fold_size-1])
-        train_subset = [slots[k] for k in xrange(n_instances) if slots[k] not in test_subset]
-        #test_data = A[0:10, list(test_subset)]
-        #test_target = A[10: 20, list(test_subset)]
-        #train_data = A[0:10, train_subset]
-        #train_target = A[10:20, train_subset]
-        w = train(A[:, train_subset], XY, YY)
+        print "fold %d" % fold 
+        start = fold * fold_size
+        if fold == n_folds-1:
+            end = n_instances
+        else:
+            end = (fold+1)*fold_size
+        test_subset = set(slots[start: end])
+        train_subset = [k for k in slots if k not in test_subset]
         test_subset = list(test_subset)
+        w = train(A[:, train_subset], XY, YY, 10)
         for i in xrange(len(test_subset)):
-            print 'column number = ' , test_subset[i] 
-            p = test(A[:,test_subset[i]], w, XY, YY)
+            log_likelihood = 0
+            test_instance_id = test_subset[i]
+            p = test(A[:,test_instance_id], w, XY, YY)
             for g in range(len(p)):
-                print 'g =', g;
-                import operator
-                sorted_p = sorted(p[g].iteritems(), key= operator.itemgetter(1), reverse = True)
-                for e in sorted_p:
-                    print "%20s  %12s" % ( e[0], e[1])
-    
-    #w = train(A, XY, YY)
-    #p = test(BX[:,0], w, XY, YY)
-    #for p_g in p:
-    #    sprint p_g
-    
-    
+                # find the ground truth label for this group
+                label_idx = [k-1 for k in YY[g]]
+                if g < 3:
+                    ground_label = int(A[label_idx, test_instance_id])
+                else:
+                    ground_label = tuple([int(k) for k in A[label_idx, test_instance_id]])
+                log_likelihood += p[g][ground_label]
+            total_log_likelihood += log_likelihood
+            n_tested += 1
+            print "neg-log-likelihood loss for the instance %d %f" % (test_instance_id, -log_likelihood)
+            
+        print "total loss %f" % -total_log_likelihood
+        
