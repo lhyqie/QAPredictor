@@ -1,7 +1,9 @@
 from numpy import genfromtxt
 from numpy import vstack
 import random
+import os
 from crf import *
+
 
 
 # The L2 regularization coefficient and learning rate for SGD
@@ -9,10 +11,8 @@ l2_coeff = 1
 rate = 0.1
 
 A = genfromtxt('quiztrain.csv', delimiter=',', skip_header = 0)
-B = genfromtxt('quiztest.csv', delimiter=',', skip_header = 0)
-BX = B[0:10,:]
-BY = B[10:,:]
 
+# model structures definition
 XY = [
          {12:[x for x in range(1, 11)]},
          {13:[x for x in range(1, 11)]},
@@ -26,11 +26,11 @@ YY = [
         [20],
         [16,15,14],
         [11,17,18,19]
-      ]    
+      ]   
 
 def train(A, XY, YY , maxiter = 100):
     w = [{} for x in range(len(XY))]
-    for g in range(0, 4+1): # group id        
+    for g in range(0, len(YY)): # group id        
         w[g] = defaultdict(lambda: 0)
         for iternum in range(1, maxiter +1):
             #print 'iter ', iternum
@@ -38,8 +38,8 @@ def train(A, XY, YY , maxiter = 100):
             # Perform regularization
             reg_lik = 0;
             for k, v in w[g].items():
-                grad[k] -= 2*v*l2_coeff
-                reg_lik -= v*v*l2_coeff
+                grad[k] -= 0#2*v*l2_coeff
+                reg_lik -= 0#v*v*l2_coeff
             # Get the gradients and likelihoods
             lik = 0
             for col in range(0, A.shape[1]):  # col is the index of train data  
@@ -92,7 +92,7 @@ def generateHelper(res, yy, y ,k):
 # bx is a test point 
 def test(bx, w, XY, YY):
     p = [{} for x in range(len(XY))]
-    for g in range(0,4+1): # group id
+    for g in range(0,len(YY)): # group id
         Ys = generateAllYs(YY, g)
         for y in Ys: # each possible y
             y = [0]+ y +[0]
@@ -108,7 +108,7 @@ def test(bx, w, XY, YY):
             #print 'y = ', y
             my_grad, my_lik = calc_gradient(x, y, w[g], bx)
             #print y , my_lik
-            if len(y) == 3:
+            if len(YY[g]) == 1:
                 p[g][y[1]] = my_lik;
             else: p[g][tuple(y[1:-1])] = my_lik
         
@@ -118,10 +118,7 @@ def test(bx, w, XY, YY):
         #    print "%20s  %12s" % ( e[0], e[1])
     return p
 
-if __name__ == '__main__':
-    #print A
-    #print BX
-    #print BY
+def five_fold_cross_validation():
     
     n_features, n_instances = A.shape
     n_features -= 10
@@ -132,11 +129,10 @@ if __name__ == '__main__':
     random.shuffle(slots)
     
     total_log_likelihood = 0
-    n_tested = 0
-    
     fold_size = n_instances / n_folds
     for fold in xrange(n_folds):
-        print "fold %d" % fold 
+        total_fold_log_likelihood = 0
+        print "\n\nfold %d" % fold 
         start = fold * fold_size
         if fold == n_folds-1:
             end = n_instances
@@ -153,14 +149,64 @@ if __name__ == '__main__':
             for g in range(len(p)):
                 # find the ground truth label for this group
                 label_idx = [k-1 for k in YY[g]]
-                if g < 3:
+                if len(YY[g]) == 1:
                     ground_label = int(A[label_idx, test_instance_id])
                 else:
                     ground_label = tuple([int(k) for k in A[label_idx, test_instance_id]])
                 log_likelihood += p[g][ground_label]
+                #print 'g = ', g , 'sum_exp()', sum([exp(x) for x in p[g].values()])
+            total_fold_log_likelihood += log_likelihood
             total_log_likelihood += log_likelihood
-            n_tested += 1
-            print "neg-log-likelihood loss for the instance %d %f" % (test_instance_id, -log_likelihood)
+            print "neg-log-likelihood loss for the Question %2d %20f" % (test_instance_id + 1, -log_likelihood)
             
-        print "total loss %f" % -total_log_likelihood
+        print " For this fold,  total log loss = %f , average log loss = %f " % (-total_fold_log_likelihood, -total_fold_log_likelihood/len(test_subset)) 
+    
+    print "For entire dataset, total log loss = %f , average log loss = %f " %(-total_log_likelihood, -total_log_likelihood/n_instances)
+
+def eval_test(testDataFilePath):
+    B = genfromtxt(testDataFilePath, delimiter=',', skip_header = 0)
+    n_features, n_instances = B.shape
+    n_features -= 10
+    total_log_likelihood = 0
+    w = train(A, XY, YY, 10)
+    for i in range(n_instances):
+            log_likelihood = 0
+            p = test(B[:,i], w, XY, YY)
+            for g in range(len(p)):
+                # find the ground truth label for this group
+                label_idx = [k-1 for k in YY[g]]
+                if len(YY[g]) == 1:
+                    ground_label = int(A[label_idx, i])
+                else:
+                    ground_label = tuple([int(k) for k in A[label_idx, i]])
+                log_likelihood += p[g][ground_label]
+                #print 'g = ', g , 'sum_exp()', sum([exp(x) for x in p[g].values()])
+            total_log_likelihood += log_likelihood
+            print "neg-log-likelihood loss for the Question %2d %20f" % (i + 1, -log_likelihood)
+            
+    print "\n\nFor entire test dataset, total log loss = %f , average log loss = %f " %(-total_log_likelihood, -total_log_likelihood/n_instances)
+
+if __name__ == '__main__':
+    optionMenu =  """
+                     This is the team project for CS594 Fall 2013 with Prof. Brian Ziebart
+                     Team members: XiaoKai Wei, Sihong Xie, Huayi Li 
+                     
+                     enter your option:
+                            1. compute log loss using five-fold cross validation on the training dataset
+                            2. compute log loss on the testing dataset 
+                            3. exit
+                  """
+    while(True):
+        option = input(optionMenu)
+        if option == 1:
+            five_fold_cross_validation()
+        elif option == 2:
+            testDataFilePath = raw_input("\nplease enter the path for the test data whose format is identical to quiztrain.csv\n")
+            eval_test(testDataFilePath)
+        elif option == 3:
+            break;
+        raw_input("\n\n press any key to continue...\n")
+        os.system('cls')
         
+    print '\n\n\n See you ....'
+    
