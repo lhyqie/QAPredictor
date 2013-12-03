@@ -159,7 +159,7 @@ def five_fold_cross_validation():
         test_subset = set(slots[start: end])
         train_subset = [k for k in slots if k not in test_subset]
         test_subset = list(test_subset)
-        w = train(A[:, train_subset], XY, YY, 10)
+        w = train(A[:, train_subset], XY, YY, 100)
         for i in xrange(len(test_subset)):
             log_likelihood = 0
             test_instance_id = test_subset[i]
@@ -191,7 +191,7 @@ def eval_test(testDataFilePath):
     n_features, n_instances = B.shape
     n_features -= 10
     total_log_likelihood = 0
-    w = train(A, XY, YY, 10)
+    w = train(A, XY, YY, 100)
     for i in range(n_instances):
             log_likelihood = 0
             p = test(B[:,i], w, XY, YY)
