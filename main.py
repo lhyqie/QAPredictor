@@ -5,14 +5,14 @@ import os
 from crf import *
 
 
-
 # The L2 regularization coefficient and learning rate for SGD
 l2_coeff = 1
 rate = 0.1
 
+# A is matrix of training data, each column represents the answer of a student toward 20 questions
 A = genfromtxt('quiztrain.csv', delimiter=',', skip_header = 0)
 
-# model structures definition
+# model structures definition, XY is the dependency between X's and Y's and YY between Y's
 XY = [
          {12:[x for x in range(1, 11)]},
          {13:[x for x in range(1, 11)]},
@@ -28,6 +28,13 @@ YY = [
         [11,17,18,19]
       ]   
 
+"""
+  input :  A -   training data
+           XY -  dependency between X's and Y's
+           YY -  dependency between Y's
+           maxiter - max iteration number default 100
+  output:  learned weights parameters
+"""         
 def train(A, XY, YY , maxiter = 100):
     w = [{} for x in range(len(XY))]
     for g in range(0, len(YY)): # group id        
@@ -73,13 +80,16 @@ def train(A, XY, YY , maxiter = 100):
     return w;
 
 
+"""
+    for a YY[g] structure, generate all possible vector space YY[g] can take
+"""
 def generateAllYs(YY, g):
     yy = YY[g]  # [16,15,14]
     res = [];
     y = [0 for x in range(len(yy))];
     generateHelper(res, yy, y, 0)
     return res
-    
+ 
 def generateHelper(res, yy, y ,k):
     if k == len(yy):
         import copy
@@ -89,7 +99,13 @@ def generateHelper(res, yy, y ,k):
             y[k] = i 
             generateHelper(res, yy, y, k+1)
             
-# bx is a test point 
+"""
+    input:  bx - a vector that represents the answers of a student toward first 10 questions   
+            w  - weight parameters learned from train()
+            XY -  dependency between X's and Y's
+            YY -  dependency between Y's
+    output: probabilistic distribution of P(y|x) 
+""" 
 def test(bx, w, XY, YY):
     p = [{} for x in range(len(XY))]
     for g in range(0,len(YY)): # group id
@@ -118,8 +134,10 @@ def test(bx, w, XY, YY):
         #    print "%20s  %12s" % ( e[0], e[1])
     return p
 
+"""
+    subroutine for running five fold cross validation on training data
+"""
 def five_fold_cross_validation():
-    
     n_features, n_instances = A.shape
     n_features -= 10
     n_folds = 5
@@ -163,6 +181,11 @@ def five_fold_cross_validation():
     
     print "For entire dataset, total log loss = %f , average log loss = %f " %(-total_log_likelihood, -total_log_likelihood/n_instances)
 
+
+"""
+    input:  the filepath of test data
+    output: print to console the log loss of each data and average log loss
+"""
 def eval_test(testDataFilePath):
     B = genfromtxt(testDataFilePath, delimiter=',', skip_header = 0)
     n_features, n_instances = B.shape
@@ -186,6 +209,9 @@ def eval_test(testDataFilePath):
             
     print "\n\nFor entire test dataset, total log loss = %f , average log loss = %f " %(-total_log_likelihood, -total_log_likelihood/n_instances)
 
+
+
+######################################################################################################################
 if __name__ == '__main__':
     optionMenu =  """
                      This is the team project for CS594 Fall 2013 with Prof. Brian Ziebart

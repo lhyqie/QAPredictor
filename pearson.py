@@ -2,16 +2,6 @@ from numpy import genfromtxt
 from numpy import isnan
 import numpy as np
 
-def mapping(x):
-    if x>=1 and x<=3:    #difficult
-        return 1;
-    elif x>=4 and x<=7:  #medium
-        return 2;
-    elif x>=8 and x<=10: #easy
-        return 3;
-    else:
-        return -999;
-
 
 # each row is a question
 A1 = genfromtxt('quiztrain.csv', delimiter=',', skip_header = 0)
@@ -21,7 +11,6 @@ print A1.shape
 print A2.shape
 print A.shape
  
-
 
 from scipy.stats.stats import pearsonr
 
