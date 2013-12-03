@@ -33,7 +33,7 @@ def calc_e(x, i, l, r, w, e_prob, q):  # \Phi_i(y_i-1 = l, y_i = r) Potential
         e_prob[i,l,r] = dot(calc_feat(x, i, l, r, q), w)
     return e_prob[i,l,r]
 
-def calc_f(x, i, l, w, e, f, q):  # \Alpha_i(y_i-1 = l)  backward propagation
+def calc_f(x, i, l, w, e, f, q):  # \Alpha_i(y_i-1 = l)  forward propagation
     if (i, l) not in f:
         if i == 0:
             f[i,0] = 0
