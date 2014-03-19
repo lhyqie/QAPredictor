@@ -175,7 +175,7 @@ def five_fold_cross_validation():
                 #print 'g = ', g , 'sum_exp()', sum([exp(x) for x in p[g].values()])
             total_fold_log_likelihood += log_likelihood
             total_log_likelihood += log_likelihood
-            print "neg-log-likelihood loss for the Student %2d %20f" % (test_instance_id + 1, -log_likelihood)
+            print "neg-log-likelihood loss for the Question %2d %20f" % (test_instance_id + 1, -log_likelihood)
             
         print " For this fold,  total log loss = %f , average log loss = %f " % (-total_fold_log_likelihood, -total_fold_log_likelihood/len(test_subset)) 
     
@@ -205,7 +205,7 @@ def eval_test(testDataFilePath):
                 log_likelihood += p[g][ground_label]
                 #print 'g = ', g , 'sum_exp()', sum([exp(x) for x in p[g].values()])
             total_log_likelihood += log_likelihood
-            print "neg-log-likelihood loss for the Student %2d %20f" % (i + 1, -log_likelihood)
+            print "neg-log-likelihood loss for the Question %2d %20f" % (i + 1, -log_likelihood)
             
     print "\n\nFor entire test dataset, total log loss = %f , average log loss = %f " %(-total_log_likelihood, -total_log_likelihood/n_instances)
 
